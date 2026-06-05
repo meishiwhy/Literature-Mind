@@ -1,0 +1,14 @@
+# LitMind
+
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.env
+.DS_Store
+Thumbs.db
+
+# Project-specific temp files
+chang2012_parsed.json

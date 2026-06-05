@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "litmind"
+version = "0.3.0"
+description = "LitMind — 学术文献智能处理工具集 (Zotero Connector + Paper Parser + Paper Analyzer)"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["zotero", "reference-management", "academic", "pdf-parser", "bibliography", "llm", "knowledge-extraction"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+[project.optional-dependencies]
+pdf = ["pymupdf"]
+llm = ["anthropic", "openai"]
+kb = ["sqlalchemy", "chromadb", "sentence-transformers"]
+all = ["pymupdf", "pdfplumber", "PyPDF2", "anthropic", "openai", "sqlalchemy", "chromadb", "sentence-transformers"]
+
+[project.scripts]
+litmind-analyze = "litmind_analyzer.__main__:cli"
+litmind-knowledge = "litmind_knowledge.cli:cli"
+litmind-chat = "litmind_chat.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/<your>/litmind"
+Repository = "https://github.com/<your>/litmind"
+
+[tool.setuptools.packages.find]
+where = ["src"]
