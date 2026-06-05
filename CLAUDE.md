@@ -53,4 +53,5 @@
 - **[litmind-knowledge](litmind/.claude/skills/litmind-knowledge/SKILL.md)**: Knowledge Base — 存储与索引科研知识
 - **[litmind-chat](litmind/.claude/skills/litmind-chat/SKILL.md)**: Research Chat — 科研知识库问答
 - **[litmind-evidence](litmind/.claude/skills/litmind-evidence/SKILL.md)**: Evidence Finder — 科研证据检索与归纳
+- **[litmind-review](litmind/.claude/skills/litmind-review/SKILL.md)**: Review Generator — 基于科研知识库的综述生成系统
 - **[litmind-discussion](litmind/.claude/skills/litmind-discussion/SKILL.md)**: Discussion Generator — 基于证据的 Discussion 草稿生成
