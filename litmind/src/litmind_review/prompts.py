@@ -18,7 +18,7 @@ For each theme, provide:
 - description: one-sentence description
 - paper_indices: list of paper numbers belonging to this theme
 
-Output JSON format: {"themes": [{"name": "...", "description": "...", "paper_indices": [0,1,2]}]}"""
+Output JSON format: {{"themes": [{{"name": "...", "description": "...", "paper_indices": [0,1,2]}}]}}"""
 
 SECTION_PROMPTS = {
     "introduction": """Write the Introduction section. Set the research context, explain why this topic is important, and state the review's objectives.
