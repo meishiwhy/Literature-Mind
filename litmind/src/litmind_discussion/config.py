@@ -1,0 +1,7 @@
+"""Discussion Generator 配置"""
+
+COMPOSER_MODEL = "claude-sonnet-4-20250514"
+EVIDENCE_TOP_K = 10
+CACHE_TTL_SECONDS = 300
+CACHE_MAX_SIZE = 50
+MAX_RESULTS = 10
