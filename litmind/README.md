@@ -11,7 +11,7 @@ Zotero → Metadata → PDF → Full Text → Analysis → KB → Evidence → D
 
 | 模块 | 名称 | 功能 |
 |---|---|---|
-| m1 | **litmind-zotero** | Zotero 连接器 — 导出文献元数据 |
+| m1 | **litmind-zotero** | Zotero 连接器 — 导出全部学术文献（期刊/学位论文/会议等）+ 独立 PDF 附件 |
 | m2 | **litmind-parser** | PDF 解析 — 清洗噪声、识别章节结构 |
 | m3 | **litmind-analyzer** | LLM 知识提取 — 研究问题/方法/变量/发现/声明 |
 | m4 | **litmind-knowledge** | 知识库 — SQLite + ChromaDB 存储与检索 |
@@ -49,7 +49,7 @@ export OPENAI_API_KEY=sk-...      # OpenAI provider (可选)
 
 ### m1: Zotero Connector (`/litmind-zotero`)
 
-从 Zotero 本地 SQLite 数据库读取期刊论文元数据。
+从 Zotero 本地 SQLite 数据库读取全部学术文献元数据（期刊论文、学位论文、会议论文、预印本等），并自动检测和导出无关联元数据的独立 PDF 附件。
 
 ```bash
 python scripts/cli.py export -o papers.json
@@ -62,6 +62,7 @@ papers = export_all(discover_database())
 ```
 
 **输出：** `PaperMetadata` — key, title, authors, year, doi, journal, pdfPath, tags, collections
+**独立 PDF：** 自动从文件名提取标题和年份，标记 `itemType = "standalone_pdf"`
 
 ---
 
