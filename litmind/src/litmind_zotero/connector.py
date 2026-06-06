@@ -18,8 +18,57 @@ from typing import Optional
 
 from .models import Author, ExportReport, PaperMetadata
 
-ITEM_TYPE_JOURNAL_ARTICLE = 5
 FIELD_NAMES: dict[int, str] = {}
+
+# ── 独立附件文件名解析 ──────────────────────────────────────
+
+_RE_FILENAME_META = re.compile(
+    r"^(?:"
+    r"(?P<author_cn>[一-鿿]+)"              # 中文作者
+    r"(?:[\s_\-、]?[\(【]?"                     # 分隔符
+    r"(?P<year_cn>\d{4})"                               # 年份
+    r"[\)】]?[\s_\-、]?)"                       # 闭括号
+    r")?"
+    r"(?P<rest>.*?)"
+    r"\.pdf$"
+)
+
+_RE_FILENAME_EN = re.compile(
+    r"^(?P<author_en>[A-Z][a-zà-ü]+(?:\s[A-Z][a-zà-ü]+)*)"  # 英文作者
+    r"[\s_\-(]*"
+    r"(?:(?:\((?P<year_en>\d{4})\)|(?P<year_en2>\d{4}))[\s_\-]*)?"  # 年份
+    r"(?:[\(\[].*?[\)\]][\s_]*)?"                                # 括号信息
+    r"(?P<rest_en>.*?)"
+    r"\.pdf$"
+)
+
+
+def _resolve_attachment_path(raw: str) -> str:
+    """将 Zotero 存储路径转为真实文件路径"""
+    if not raw:
+        return ""
+    if raw.startswith("storage:"):
+        return raw[len("storage:"):]
+    if raw.startswith("attachments:"):
+        return raw[len("attachments:"):]
+    if raw.startswith("file://"):
+        return raw[len("file://"):].lstrip("/")
+    return raw
+
+
+def _extract_meta_from_filename(filename: str) -> dict:
+    """从 PDF 文件名尽量提取标题、作者、年份"""
+    name = Path(filename).stem.strip()
+    years = re.findall(r"\b(19\d{2}|20\d{2})\b", name)
+    year_str = years[0] if years else ""
+    cleaned = re.sub(
+        r"[\s_\-]*(\.pdf|英文|中文|全文|终稿|修改稿|定稿)\s*$", "", name, flags=re.I
+    ).strip()
+    return {
+        "title": cleaned,
+        "year": int(year_str) if year_str.isdigit() else None,
+        "filename": filename,
+    }
 
 
 # ── 数据库发现 ──────────────────────────────────────────────
@@ -131,9 +180,9 @@ def export_all(db_path: Path, report: ExportReport | None = None) -> list[PaperM
 
     cur = conn.execute("""
         SELECT itemID, key, dateAdded, dateModified FROM items
-        WHERE itemTypeID = ? AND libraryID = 1
+        WHERE itemTypeID NOT IN (1, 14) AND libraryID = 1
         ORDER BY dateAdded DESC
-    """, (ITEM_TYPE_JOURNAL_ARTICLE,))
+    """)
 
     results: list[PaperMetadata] = []
     for row in cur:
@@ -164,6 +213,49 @@ def export_all(db_path: Path, report: ExportReport | None = None) -> list[PaperM
             if meta.abstract: report.withAbstract += 1
         except Exception as e:
             report.errors.append(f"[{key}] {e}")
+
+    # ── 导出独立 PDF 附件（没有父条目的 PDF） ──────────────
+    standalone_cur = conn.execute("""
+        SELECT i.itemID, i.key, i.dateAdded, i.dateModified,
+               ia.title AS filename, ia.path, ia.contentType
+        FROM items i
+        JOIN itemAttachments ia ON i.itemID = ia.itemID
+        WHERE i.itemTypeID = 14
+          AND i.libraryID = 1
+          AND ia.contentType = 'application/pdf'
+          AND (ia.parentItemID IS NULL
+               OR NOT EXISTS (
+                   SELECT 1 FROM items pi
+                   WHERE pi.itemID = ia.parentItemID
+                     AND pi.itemTypeID NOT IN (1, 14)
+               ))
+        ORDER BY i.dateAdded DESC
+    """)
+
+    for row in standalone_cur:
+        try:
+            raw_path = row["path"] or ""
+            resolved = _resolve_attachment_path(raw_path)
+            filename = row["filename"] or Path(resolved).name
+            meta_from_name = _extract_meta_from_filename(filename)
+
+            meta = PaperMetadata(
+                key=row["key"],
+                title=meta_from_name["title"],
+                authors=[],
+                year=meta_from_name.get("year"),
+                pdfPath=resolved,
+                pdfPaths=[resolved] if resolved else [],
+                itemType="standalone_pdf",
+                dateAdded=row["dateAdded"] or "",
+                dateModified=row["dateModified"] or "",
+            )
+            results.append(meta)
+            report.standalonePdfs += 1
+            if meta.pdfPath:
+                report.withPdf += 1
+        except Exception as e:
+            report.errors.append(f"[{row['key']}] {e}")
 
     conn.close()
     return results

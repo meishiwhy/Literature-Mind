@@ -75,20 +75,24 @@ class PaperMetadata:
 @dataclass
 class ExportReport:
     total: int = 0
+    standalonePdfs: int = 0
     withPdf: int = 0
     withDoi: int = 0
     withAbstract: int = 0
     errors: list[str] = field(default_factory=list)
 
     def print(self) -> None:
+        total_all = self.total + self.standalonePdfs
         print(f"\n{'=' * 50}")
         print(f"  LitMind Zotero Connector — 导出报告")
         print(f"{'=' * 50}")
-        print(f"  总文献数:     {self.total}")
-        if self.total > 0:
-            print(f"  有 PDF:       {self.withPdf} ({self.withPdf / self.total * 100:.1f}%)")
-            print(f"  有 DOI:       {self.withDoi} ({self.withDoi / self.total * 100:.1f}%)")
-            print(f"  有摘要:       {self.withAbstract} ({self.withAbstract / self.total * 100:.1f}%)")
+        print(f"  有元数据的文献:   {self.total}")
+        print(f"  独立 PDF 附件:    {self.standalonePdfs}")
+        print(f"  总导出文献数:     {total_all}")
+        if total_all > 0:
+            print(f"  有 PDF:           {self.withPdf} ({self.withPdf / total_all * 100:.1f}%)")
+            print(f"  有 DOI:           {self.withDoi}")
+            print(f"  有摘要:           {self.withAbstract}")
         if self.errors:
             print(f"\n  错误 ({len(self.errors)}):")
             for e in self.errors[:5]:
