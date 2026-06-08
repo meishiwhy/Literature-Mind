@@ -1,6 +1,15 @@
 ---
 name: litmind-zotero
 description: LitMind Zotero Connector — 从 Zotero 本地数据库导出全部文献（期刊/学位论文/会议论文等）+ 独立PDF附件为统一 PaperMetadata 模型
+topics:
+  - zotero
+  - literature-review
+  - research-tool
+  - ai-research
+  - literature-management
+  - academic-writing
+  - claude-code
+  - knowledge-base
 ---
 
 # LitMind Zotero Connector
