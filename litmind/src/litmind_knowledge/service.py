@@ -1,5 +1,6 @@
 """KnowledgeBase 服务 — 统一公开接口"""
 
+import logging
 from pathlib import Path
 from typing import Any, Optional
 
@@ -18,6 +19,8 @@ from .repositories.limitation_repo import LimitationRepository
 from .repositories.future_direction_repo import FutureDirectionRepository
 from .repositories.knowledge_repo import KnowledgeRepository
 from .vectorstore.indexer import VectorIndexer
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeBase:
@@ -52,6 +55,7 @@ class KnowledgeBase:
         pid = analysis.get("paperId", "") or analysis.get("paper_id", "")
         participants = analysis.get("participants", {}) or {}
 
+        import json
         paper = PaperRecord(
             paperId=pid,
             title=analysis.get("title", ""),
@@ -63,6 +67,7 @@ class KnowledgeBase:
             studyDesign=analysis.get("studyDesign", ""),
             sampleSize=participants.get("sampleSize") if isinstance(participants, dict) else None,
             population=participants.get("population", "") if isinstance(participants, dict) else "",
+            rawAnalysis=json.dumps(analysis, ensure_ascii=False),
         )
 
         variables = [VariableRecord(paperId=pid, variable=v) for v in analysis.get("variables", [])]
@@ -102,8 +107,8 @@ class KnowledgeBase:
         self._future_repo().save_batch(parsed["futureDirections"])
         self._session.commit()
 
-        for field in ["researchQuestion", "mainFindings", "claims", "limitations", "futureDirections"]:
-            self._indexer.index_paper(pid, analysis, field)
+        # 批量索引：一篇论文的全部字段一次写入 ChromaDB
+        self._indexer.index_paper_batch(pid, analysis)
 
         return pid
 
@@ -153,23 +158,37 @@ class KnowledgeBase:
         return self._indexer.semantic_search(query, top_k=top_k)
 
     def import_batch(self, analyses: list[dict]) -> int:
-        """批量导入"""
+        """批量导入
+
+        Args:
+            analyses: PaperAnalysis dict 列表
+
+        Returns:
+            成功导入的文献数量（失败的在日志中记录 paperId 和原因）
+        """
         count = 0
         for a in analyses:
+            pid = a.get("paperId", "") or a.get("paper_id", "") or "unknown"
             try:
                 self.add_paper(a)
                 count += 1
-            except Exception:
+            except Exception as e:
+                logger.error("[%s] Batch import failed: %s", pid, e, exc_info=True)
                 continue
+        logger.info("Batch import: %d/%d succeeded", count, len(analyses))
         return count
 
     def rebuild_index(self) -> bool:
         """重建所有向量索引"""
         self._indexer.rebuild_index()
         papers = self._paper_repo().search("")
-        for p in papers:
+        total = len(papers)
+        logger.info("Rebuilding index for %d papers...", total)
+        for i, p in enumerate(papers, 1):
             full = self.get_paper(p.paperId)
             if full:
-                for field in ["researchQuestion", "mainFindings", "claims", "limitations", "futureDirections"]:
-                    self._indexer.index_paper(p.paperId, full, field)
+                self._indexer.index_paper_batch(p.paperId, full)
+            if i % 10 == 0:
+                logger.info("  Rebuilt %d/%d papers", i, total)
+        logger.info("Index rebuild complete: %d papers", total)
         return True

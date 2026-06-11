@@ -1,9 +1,14 @@
 """DiscussionComposer — 逐步生成 7 个 Discussion Section"""
 
 from __future__ import annotations
+
+import logging
+
 from .config import COMPOSER_MODEL
 from .models import CollectedEvidence, DiscussionInput
 from .prompts import SYSTEM_PROMPT, SECTION_PROMPTS, build_evidence_reference
+
+logger = logging.getLogger(__name__)
 
 
 SECTIONS = [
@@ -64,7 +69,8 @@ class DiscussionComposer:
                     section_heading = f"### {SECTION_TITLES.get(section_key, section_key)}\n\n"
                     full_draft += section_heading + section_text.strip() + "\n\n"
                     previous_text = section_text
-            except Exception:
+            except Exception as e:
+                logger.error("Discussion section '%s' generation failed: %s", section_key, e, exc_info=True)
                 previous_text = ""
 
         return full_draft.strip()

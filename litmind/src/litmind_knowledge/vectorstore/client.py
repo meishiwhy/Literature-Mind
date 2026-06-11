@@ -10,8 +10,9 @@ from chromadb import EmbeddingFunction
 class SentenceTransformerEmbedding(EmbeddingFunction):
     """sentence-transformers embedding 函数，适配 ChromaDB"""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        self.model_name = model_name
+    def __init__(self, model_name: str = ""):
+        from litmind.config import KB_EMBEDDING_MODEL
+        self.model_name = model_name or KB_EMBEDDING_MODEL
         self._model = None
 
     def _load_model(self):
@@ -26,7 +27,7 @@ class SentenceTransformerEmbedding(EmbeddingFunction):
 
     @staticmethod
     def name() -> str:
-        return "sentence_transformers_all-MiniLM-L6-v2"
+        return "sentence_transformers_bge-small-zh-v1.5"
 
     def get_config(self) -> Dict[str, Any]:
         return {"model_name": self.model_name}
@@ -34,7 +35,7 @@ class SentenceTransformerEmbedding(EmbeddingFunction):
     @staticmethod
     def build_from_config(config: Dict[str, Any]) -> "SentenceTransformerEmbedding":
         return SentenceTransformerEmbedding(
-            model_name=config.get("model_name", "all-MiniLM-L6-v2")
+            model_name=config.get("model_name", "BAAI/bge-small-zh-v1.5")
         )
 
     def default_space(self) -> str:

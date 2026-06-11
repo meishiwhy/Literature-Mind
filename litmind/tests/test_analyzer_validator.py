@@ -33,3 +33,25 @@ class TestEnsureFields:
         result = validate_and_repair({"paperId": "T1"})
         assert isinstance(result, PaperAnalysis)
         assert result.paperId == "T1"
+
+    def test_deep_extraction_default_none(self):
+        """deepExtraction 字段未提供时应为 None"""
+        result = validate_and_repair({"paperId": "T1"})
+        assert result.deepExtraction is None
+
+    def test_deep_extraction_preserved(self):
+        """deepExtraction 字段提供时应保留"""
+        data = {
+            "paperId": "T1",
+            "deepExtraction": {
+                "numericalFindings": [
+                    {"condition": "A", "metric": "B", "value": 1.0, "unit": "m", "statistics": "", "context": ""},
+                ],
+                "experimentalProtocols": ["Protocol X"],
+            },
+        }
+        result = validate_and_repair(data)
+        assert result.deepExtraction is not None
+        assert len(result.deepExtraction.numericalFindings) == 1
+        assert result.deepExtraction.numericalFindings[0].value == 1.0
+        assert len(result.deepExtraction.experimentalProtocols) == 1

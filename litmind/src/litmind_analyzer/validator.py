@@ -18,6 +18,7 @@ FIELD_DEFAULTS = {
     "limitations": [],
     "futureDirections": [],
     "keywords": [],
+    "deepExtraction": None,
 }
 
 

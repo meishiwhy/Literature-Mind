@@ -28,11 +28,25 @@ description: LitMind Discussion Generator — 基于证据的 Discussion 草稿�
 
 ## 调用方式
 
-```bash
-python scripts/discussion.py --topic "Footwear stiffness" --results "High stiffness increased MTP ROM"
-```
+### Python API
 
-## Python API
+```python
+from litmind_knowledge.service import KnowledgeBase
+from litmind_evidence import EvidenceFinderService
+from litmind_discussion import DiscussionGeneratorService, DiscussionInput
+from litmind_analyzer.providers import AnthropicProvider
+
+kb = KnowledgeBase()
+provider = AnthropicProvider()
+ev_service = EvidenceFinderService(kb=kb, llm_provider=provider)
+service = DiscussionGeneratorService(evidence_service=ev_service, llm_provider=provider)
+
+inp = DiscussionInput(studyTopic="Footwear stiffness", results=["High stiffness increased MTP ROM"])
+result = service.generate_discussion(inp)
+
+print(result.discussionDraft)
+print("Citations:", len(result.citations))
+```
 
 ```python
 from litmind_knowledge.service import KnowledgeBase

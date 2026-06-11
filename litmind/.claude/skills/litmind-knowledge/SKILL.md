@@ -10,6 +10,8 @@ description: LitMind Knowledge Base — 存储、索引、检索、更新科研�
 ## 数据流
 
 PaperAnalysis → KnowledgeBase → SQLite (结构化) + ChromaDB (向量索引)
+                                    ↕
+                              get_paper() 自动恢复 deepExtraction
 
 ## 公开接口
 

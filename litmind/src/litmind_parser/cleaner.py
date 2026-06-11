@@ -103,8 +103,6 @@ NOISE_PATTERNS = [
     re.compile(r"^\s*copyright\s.*", re.I),
     re.compile(r"^\s*©\s"),
     re.compile(r"^\s*This\s+article\s+is\s+(an?\s+)?(open\s+access|protected|distributed)", re.I),
-    re.compile(r"^\s*Figure\s+\d+[\.\-\s]"),
-    re.compile(r"^\s*Table\s+\d+[\.\-\s]"),
     re.compile(r"^\s*Author\s+(contributions|note)", re.I),
     re.compile(r"^\s*Conflict", re.I),
     re.compile(r"^\s*Funding", re.I),

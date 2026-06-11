@@ -25,6 +25,16 @@ class PaperSections:
 
 
 @dataclass
+class ExtractedTable:
+    """从 PDF 中提取的表格"""
+    pageNum: int = 0          # 所在页码
+    caption: str = ""          # 表格标题/说明
+    header: list[str] = field(default_factory=list)   # 表头行
+    rows: list[list[str]] = field(default_factory=list)  # 数据行
+    markdown: str = ""         # Markdown 格式的完整表格文本
+
+
+@dataclass
 class PaperContent:
     """结构化论文全文"""
 
@@ -38,6 +48,9 @@ class PaperContent:
 
     # ── 结构化章节 ──
     sections: PaperSections = field(default_factory=PaperSections)
+
+    # ── 表格 ──
+    tables: list[ExtractedTable] = field(default_factory=list)
 
     # ── 元数据 ──
     pageCount: int = 0

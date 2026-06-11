@@ -24,7 +24,27 @@ PaperAnalysis schema:
 - claims: [{ statement: str, evidenceSource: str }] (each claim explicitly supported in the paper)
 - limitations: str[] (limitations discussed by authors)
 - futureDirections: str[] (future research directions proposed)
-- keywords: str[] (auto-generated keywords)"""
+- keywords: str[] (auto-generated keywords)
+- deepExtraction: { numericalFindings: [...], experimentalProtocols: [...] } | null (see below)
+
+=== Deep Extraction Guidelines ===
+The "deepExtraction" field captures fine-grained quantitative data from the paper.
+It is OPTIONAL — set to null if the paper does not contain such data.
+
+deepExtraction.numericalFindings: list of { condition, metric, value, unit, statistics, context }
+  - Extract ALL explicit numerical results from the Results section.
+  - condition: the experimental condition (e.g., "Flatfoot + CS shoe", "Control group")
+  - metric: what was measured (e.g., "Ankle eversion ROM", "Peak GRF")
+  - value: the numeric value (number only, no units)
+  - unit: the measurement unit (e.g., "deg", "N·m", "BW", "ms")
+  - statistics: inferential statistics if reported (e.g., "p=0.003, η²=0.42", "F(1,24)=12.3, p<0.001")
+  - context: brief verbal context (e.g., "greater than NS shoe", "no significant difference")
+  - Be thorough: extract ALL reported numerical findings, not just the main ones.
+
+deepExtraction.experimentalProtocols: str[]
+  - Extract key experimental parameters and protocols from the Methods section.
+  - Examples: "Drop height: 45cm", "Sampling rate: 1000Hz", "Force plate: Kistler 9287BA", "Marker set: 34 reflective markers"
+  - Include equipment models, sampling rates, dimensions, durations, temperatures, etc."""
 
 
 def build_user_prompt(sections: dict) -> str:

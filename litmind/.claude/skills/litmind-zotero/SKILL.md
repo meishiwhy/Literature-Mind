@@ -41,8 +41,14 @@ SQL 查询 `itemTypeID = 14`（attachment）且无父条目（无关联元数据
 
 ## 调用方式
 
-```
-/litmind-zotero
+```bash
+# Python API（推荐）
+python -c "
+from litmind_zotero.connector import discover_database, export_all, export_to_json
+db = discover_database()
+papers = export_all(db)
+export_to_json(papers, './zotero_export.json')
+"
 ```
 
 ## 路径

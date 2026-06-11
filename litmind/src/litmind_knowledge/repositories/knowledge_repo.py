@@ -20,7 +20,7 @@ class KnowledgeRepository:
         if not paper:
             return None
 
-        return {
+        result = {
             "paperId": paper.paperId,
             "title": paper.title,
             "year": paper.year,
@@ -43,3 +43,16 @@ class KnowledgeRepository:
                 f.futureDirection for f in FutureDirectionRepository(self.session).find_by_paper_id(paper_id)
             ],
         }
+
+        # 从 raw_analysis JSON 中恢复 deepExtraction
+        if paper.rawAnalysis:
+            import json
+            try:
+                full = json.loads(paper.rawAnalysis)
+                de = full.get("deepExtraction")
+                if de:
+                    result["deepExtraction"] = de
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        return result

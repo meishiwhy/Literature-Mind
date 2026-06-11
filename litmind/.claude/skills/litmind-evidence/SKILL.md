@@ -17,18 +17,7 @@ description: LitMind Evidence Finder — 科研证据检索与归纳系统
 
 ## 调用方式
 
-```bash
-# CLI
-python scripts/evidence.py "Flatfoot increases MTP ROM"
-
-# JSON 输出
-python scripts/evidence.py "query" --json
-
-# 不使用 LLM 分类
-python scripts/evidence.py "query" --no-llm
-```
-
-## Python API
+### Python API
 
 ```python
 from litmind_knowledge.service import KnowledgeBase
@@ -40,9 +29,9 @@ provider = AnthropicProvider()
 service = EvidenceFinderService(kb=kb, llm_provider=provider)
 
 result = service.find_evidence("Flatfoot increases MTP ROM")
-print(f"Strength: {result.evidenceStrength}")
-print(f"Support: {len(result.support)} papers")
-print(f"Oppose: {len(result.oppose)} papers")
+print("Strength:", result.evidenceStrength)
+print("Support:", len(result.support), "papers")
+print("Oppose:", len(result.oppose), "papers")
 ```
 
 ## 输出字段

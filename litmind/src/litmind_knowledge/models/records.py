@@ -14,6 +14,7 @@ class PaperRecord(BaseModel):
     studyDesign: str = ""
     sampleSize: Optional[int] = None
     population: str = ""
+    rawAnalysis: str = ""  # 完整分析 JSON（含 deepExtraction）
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
 

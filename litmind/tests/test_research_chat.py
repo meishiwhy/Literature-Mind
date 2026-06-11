@@ -72,10 +72,22 @@ class TestQueryClassifier:
         result = classifier.classify("哪些文献研究了 Flatfoot？")
         assert result == "paper_search"
 
+    def test_classify_paper_search_recommend(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("推荐几篇关于足弓生物力学的文献")
+        assert result == "paper_search"
+
     def test_classify_statistic_search(self):
         from litmind_chat.classifier.query_classifier import QueryClassifier
         classifier = QueryClassifier(provider=None)
         result = classifier.classify("哪些文献使用了 SPM1D？")
+        assert result == "statistic_search"
+
+    def test_classify_statistic_search_anova(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("用了什么统计方法？")
         assert result == "statistic_search"
 
     def test_classify_claim_search(self):
@@ -84,17 +96,47 @@ class TestQueryClassifier:
         result = classifier.classify("有哪些研究支持 Flatfoot increases forefoot motion？")
         assert result == "claim_search"
 
-    def test_classify_evidence_search(self):
+    def test_classify_claim_search_chinese(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("有没有证据表明碳板鞋能减少 MTP 活动度？")
+        assert result == "claim_search"
+
+    def test_classify_evidence_search_english(self):
         from litmind_chat.classifier.query_classifier import QueryClassifier
         classifier = QueryClassifier(provider=None)
         result = classifier.classify("Does flatfoot increase forefoot motion?")
         assert result in ("evidence_search", "general_question")
+
+    def test_classify_evidence_search_chinese(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("扁平足是否会影响踝关节活动度？")
+        assert result == "evidence_search"
+
+    def test_classify_evidence_search_relationship(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("足弓高度与 GRF 之间的关系")
+        assert result == "evidence_search"
 
     def test_classify_trend_search(self):
         from litmind_chat.classifier.query_classifier import QueryClassifier
         classifier = QueryClassifier(provider=None)
         result = classifier.classify("目前关于 Foot Arch 的研究热点有哪些？")
         assert result == "trend_search"
+
+    def test_classify_trend_search_progress(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("碳板跑鞋的最新研究进展")
+        assert result == "trend_search"
+
+    def test_classify_variable_search(self):
+        from litmind_chat.classifier.query_classifier import QueryClassifier
+        classifier = QueryClassifier(provider=None)
+        result = classifier.classify("该研究关注了哪些变量？")
+        assert result == "variable_search"
 
     def test_classify_general_question(self):
         from litmind_chat.classifier.query_classifier import QueryClassifier

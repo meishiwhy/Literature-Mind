@@ -21,6 +21,7 @@ class PaperTable(Base):
     study_design = Column(Text, default="")
     sample_size = Column(Integer, nullable=True)
     population = Column(Text, default="")
+    raw_analysis = Column(Text, default="")  # 完整分析 JSON（含 deepExtraction）
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
 

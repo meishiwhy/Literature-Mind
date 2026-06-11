@@ -9,11 +9,23 @@ LitMind Paper Analyzer — CLI
 """
 
 import json
+import logging
+import os
 from pathlib import Path
 
 import click
+
 from .analyzer import analyze_paper
 from .providers import AnthropicProvider, OpenAIProvider
+
+
+def _setup_logging():
+    """配置 logging（仅对 CLI 生效，不影响作为库导入时的行为）"""
+    level = os.environ.get("LITMIND_LOG_LEVEL", "WARNING").upper()
+    logging.basicConfig(
+        level=getattr(logging, level, logging.WARNING),
+        format="[litmind] %(levelname)s %(name)s: %(message)s",
+    )
 
 
 def _get_provider(provider_name, api_key, model):
@@ -34,7 +46,7 @@ def _get_provider(provider_name, api_key, model):
 
 @click.group()
 def cli():
-    pass
+    _setup_logging()
 
 
 @cli.command()

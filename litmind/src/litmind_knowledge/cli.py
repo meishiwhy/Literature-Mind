@@ -1,15 +1,25 @@
 """Knowledge Base CLI"""
 
 import json
+import logging
+import os
 from pathlib import Path
 
 import click
 from .service import KnowledgeBase
 
 
+def _setup_logging():
+    level = os.environ.get("LITMIND_LOG_LEVEL", "WARNING").upper()
+    logging.basicConfig(
+        level=getattr(logging, level, logging.WARNING),
+        format="[litmind] %(levelname)s %(name)s: %(message)s",
+    )
+
+
 @click.group()
 def cli():
-    pass
+    _setup_logging()
 
 
 @cli.command()
@@ -84,9 +94,17 @@ def batch(input_dir, db, chroma):
 @click.option("--chroma", default="")
 def rebuild(db, chroma):
     """重建向量索引"""
+    from litmind_knowledge.repositories.paper_repo import PaperRepository
+    from litmind_knowledge.database.engine import get_session
     kb = KnowledgeBase(db_path=db, chroma_path=chroma)
-    kb.rebuild_index()
-    click.echo("索引重建完成")
+    kb._indexer.rebuild_index()
+    papers = kb._paper_repo().search("")
+    with click.progressbar(papers, label="索引重建") as bar:
+        for p in bar:
+            full = kb.get_paper(p.paperId)
+            if full:
+                kb._indexer.index_paper_batch(p.paperId, full)
+    click.echo(f"索引重建完成: {len(papers)} 篇")
 
 
 if __name__ == "__main__":

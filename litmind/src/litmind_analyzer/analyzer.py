@@ -1,11 +1,14 @@
 """Paper Analyzer 主流程"""
 
+import logging
 from typing import Any
 
 from .models import PaperAnalysis
 from .prompts import SYSTEM_PROMPT, build_user_prompt
 from .provider import LLMProvider
 from .validator import validate_and_repair
+
+logger = logging.getLogger(__name__)
 
 
 def analyze_paper(
@@ -25,6 +28,7 @@ def analyze_paper(
     sections = paper_content.get("sections", {})
 
     if not sections:
+        logger.warning("[%s] Paper has no sections, returning empty analysis", paper_key)
         return PaperAnalysis(paperId=paper_key)
 
     try:
@@ -33,5 +37,6 @@ def analyze_paper(
         analysis = validate_and_repair(raw)
         analysis.paperId = paper_key
         return analysis
-    except Exception:
+    except Exception as e:
+        logger.error("[%s] LLM analysis failed: %s", paper_key, e, exc_info=True)
         return PaperAnalysis(paperId=paper_key)

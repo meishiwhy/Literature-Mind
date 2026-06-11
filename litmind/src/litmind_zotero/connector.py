@@ -217,9 +217,11 @@ def export_all(db_path: Path, report: ExportReport | None = None) -> list[PaperM
     # ── 导出独立 PDF 附件（没有父条目的 PDF） ──────────────
     standalone_cur = conn.execute("""
         SELECT i.itemID, i.key, i.dateAdded, i.dateModified,
-               ia.title AS filename, ia.path, ia.contentType
+               COALESCE(idv.value, '') AS filename, ia.path, ia.contentType
         FROM items i
         JOIN itemAttachments ia ON i.itemID = ia.itemID
+        LEFT JOIN itemData id ON i.itemID = id.itemID AND id.fieldID = 1
+        LEFT JOIN itemDataValues idv ON id.valueID = idv.valueID
         WHERE i.itemTypeID = 14
           AND i.libraryID = 1
           AND ia.contentType = 'application/pdf'

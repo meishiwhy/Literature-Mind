@@ -29,11 +29,20 @@ class TestCitationManager:
         assert "P1" in extracted
         assert "P2" in extracted
 
-    def test_filter_known(self):
+    def test_filter_known_removes_unknown(self):
+        """不在 known_ids 中的 [paperId] 引用应被移除"""
         text = "Study [P1] shows [P99] results."
         filtered = self.mgr.filter_known(text, {"P1"})
         assert "[P1]" in filtered
-        assert "[P99]" in filtered
+        assert "[P99]" not in filtered  # P99 不在白名单中
+
+    def test_filter_known_empty_text(self):
+        assert self.mgr.filter_known("", {"P1"}) == ""
+
+    def test_filter_known_all_known(self):
+        text = "Both [P1] and [P2] are valid."
+        filtered = self.mgr.filter_known(text, {"P1", "P2"})
+        assert filtered == text
 
     def test_to_citation_list_filters_unknown(self):
         self.mgr.add(DiscussionCitation(paperId="P1", section="draft"))

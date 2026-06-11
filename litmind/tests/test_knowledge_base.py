@@ -59,6 +59,7 @@ class TestTables:
         assert "paper_id" in cols
         assert "title" in cols
         assert "year" in cols
+        assert "raw_analysis" in cols  # v0.4.0 新增
 
 
 class TestPaperRepository:
@@ -191,6 +192,88 @@ class TestVectorStore:
         assert len(results) == 0
 
 
+class TestVectorIndexerBatch:
+    @pytest.fixture
+    def indexer(self, tmp_path):
+        from litmind_knowledge.vectorstore.indexer import VectorIndexer
+        return VectorIndexer(persist_dir=str(tmp_path / "chroma"))
+
+    def test_fmt_numerical_full(self):
+        from litmind_knowledge.vectorstore.indexer import VectorIndexer
+        text = VectorIndexer._fmt_numerical({
+            "condition": "Flatfoot + CS",
+            "metric": "Ankle ROM",
+            "value": 12.3,
+            "unit": "deg",
+            "statistics": "p=0.003",
+        })
+        assert "Flatfoot + CS" in text
+        assert "Ankle ROM" in text
+        assert "12.3" in text
+        assert "deg" in text
+        assert "p=0.003" in text
+
+    def test_fmt_numerical_partial(self):
+        from litmind_knowledge.vectorstore.indexer import VectorIndexer
+        text = VectorIndexer._fmt_numerical({"metric": "GRF", "value": 3.2})
+        assert "GRF" in text
+        assert "3.2" in text
+        # 无 unit/statistics 不应报错
+
+    def test_fmt_numerical_empty(self):
+        from litmind_knowledge.vectorstore.indexer import VectorIndexer
+        text = VectorIndexer._fmt_numerical({})
+        assert text == ""
+
+    def test_index_paper_batch_standard_fields(self, indexer):
+        """index_paper_batch 应当索引标准字段并支持搜索"""
+        data = {
+            "researchQuestion": "Does flatfoot increase MTP ROM?",
+            "mainFindings": ["Flatfoot increases MTP ROM"],
+            "claims": [{"statement": "Flatfoot increases MTP ROM", "evidenceSource": "Results"}],
+            "limitations": ["Small sample"],
+            "futureDirections": ["Larger study"],
+        }
+        indexer.index_paper_batch("B001", data)
+        results = indexer.semantic_search("flatfoot MTP ROM increase", top_k=5)
+        assert len(results) > 0
+        assert results[0]["paperId"] == "B001"
+
+    def test_index_paper_batch_with_deep_extraction(self, indexer):
+        """index_paper_batch 应当索引 deepExtraction 字段"""
+        data = {
+            "researchQuestion": "Does shoe stiffness affect kinematics?",
+            "mainFindings": [],
+            "deepExtraction": {
+                "numericalFindings": [
+                    {
+                        "condition": "Flatfoot + CS",
+                        "metric": "Ankle eversion ROM",
+                        "value": 12.3,
+                        "unit": "deg",
+                        "statistics": "p=0.003",
+                        "context": "",
+                    },
+                ],
+                "experimentalProtocols": ["Drop height: 45cm"],
+            },
+        }
+        indexer.index_paper_batch("B002", data)
+
+        # 应能通过数值数据检索到
+        results = indexer.semantic_search("ankle eversion 12.3 deg", top_k=5)
+        assert len(results) > 0
+        matching = [r for r in results if r["paperId"] == "B002"]
+        assert len(matching) > 0
+
+    def test_index_paper_batch_no_deep_extraction(self, indexer):
+        """没有 deepExtraction 时不应报错"""
+        data = {"researchQuestion": "Test", "mainFindings": []}
+        indexer.index_paper_batch("B003", data)
+        results = indexer.semantic_search("test", top_k=5)
+        assert isinstance(results, list)
+
+
 class TestKnowledgeBase:
     @pytest.fixture
     def kb(self, tmp_path):
@@ -257,3 +340,58 @@ class TestKnowledgeBase:
     def test_import_batch(self, kb, sample_analysis):
         count = kb.import_batch([sample_analysis])
         assert count == 1
+
+    def test_add_paper_with_deep_extraction(self, kb):
+        """新增 deepExtraction 数据的存储与检索"""
+        analysis = {
+            "paperId": "DEEP001",
+            "researchQuestion": "Does shoe stiffness affect MTP ROM?",
+            "researchDomain": "Biomechanics",
+            "studyDesign": "Experimental Study",
+            "participants": {"sampleSize": 26, "groups": ["Flat", "Normal"], "population": "Healthy adults"},
+            "methods": ["Motion capture", "Force plate"],
+            "statistics": ["SPM", "ANOVA"],
+            "mainFindings": ["Carbon plate reduced MTP ROM in flatfoot"],
+            "claims": [],
+            "keywords": ["flatfoot", "carbon plate"],
+            "deepExtraction": {
+                "numericalFindings": [
+                    {
+                        "condition": "Flatfoot + CS shoe",
+                        "metric": "Ankle eversion ROM",
+                        "value": 12.3,
+                        "unit": "deg",
+                        "statistics": "p=0.003",
+                        "context": "greater than NS shoe",
+                    },
+                    {
+                        "condition": "Normal + CS shoe",
+                        "metric": "Peak GRF",
+                        "value": 3.2,
+                        "unit": "BW",
+                        "statistics": "F(1,24)=8.5, p=0.007",
+                        "context": "no significant difference",
+                    },
+                ],
+                "experimentalProtocols": [
+                    "Drop height: 45cm",
+                    "Sampling rate: 1000Hz",
+                    "Force plate: Kistler 9287BA",
+                ],
+            },
+        }
+
+        pid = kb.add_paper(analysis)
+        assert pid == "DEEP001"
+
+        # get_paper 应恢复 deepExtraction
+        paper = kb.get_paper("DEEP001")
+        assert paper is not None
+        assert "deepExtraction" in paper
+        assert len(paper["deepExtraction"]["numericalFindings"]) == 2
+        assert paper["deepExtraction"]["numericalFindings"][0]["value"] == 12.3
+        assert len(paper["deepExtraction"]["experimentalProtocols"]) == 3
+
+        # 语义搜索应能检索到数值数据（可能为空：无 embedding 模型时不强求）
+        results = kb.semantic_search("ankle eversion 12.3 deg", top_k=5)
+        assert isinstance(results, list)

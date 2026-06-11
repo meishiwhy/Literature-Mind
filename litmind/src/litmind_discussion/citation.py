@@ -40,7 +40,25 @@ class CitationManager:
         return result
 
     def filter_known(self, text: str, known_ids: set[str]) -> str:
-        return text
+        """过滤文本中的引用标记，移除不在 known_ids 中的虚构引用
+
+        Args:
+            text: 包含 [paperId] 引用的文本
+            known_ids: 知识库中真实存在的 paperId 集合
+
+        Returns:
+            过滤后的文本（虚构引用标记被删除）
+        """
+        if not text:
+            return text
+
+        def _replace_match(m: re.Match) -> str:
+            pid = m.group(1)
+            if pid in known_ids:
+                return m.group(0)  # 保留
+            return ""  # 删除
+
+        return re.sub(r"\[([A-Za-z0-9_]+)\]", _replace_match, text)
 
     def to_citation_list(self, known_ids: set[str]) -> list[DiscussionCitation]:
         return [c for c in self._citations if c.paperId in known_ids]

@@ -1,8 +1,21 @@
 """Research Chat CLI — 交互式问答"""
 
 import json
+import logging
 import os
 from pathlib import Path
+
+import click
+from litmind_chat.service import ResearchChatService
+from litmind_chat.generator.citation_formatter import CitationFormatter
+
+
+def _setup_logging():
+    level = os.environ.get("LITMIND_LOG_LEVEL", "WARNING").upper()
+    logging.basicConfig(
+        level=getattr(logging, level, logging.WARNING),
+        format="[litmind] %(levelname)s %(name)s: %(message)s",
+    )
 
 import click
 from litmind_chat.service import ResearchChatService
@@ -21,7 +34,7 @@ def _get_provider(provider_name: str, api_key: str | None, model: str | None):
 
 @click.group()
 def cli():
-    pass
+    _setup_logging()
 
 
 @cli.command()

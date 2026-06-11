@@ -40,6 +40,10 @@ class DiscussionGeneratorService:
 
         citation_mgr = CitationManager()
         known_ids = {item.paperId for item in evidence.all_items if item.paperId}
+
+        # 引用过滤：删除 Draft 中不在知识库的虚构 paperId 引用
+        draft = citation_mgr.filter_known(draft, known_ids)
+
         raw_ids = citation_mgr.extract_from_text(draft)
         for pid in raw_ids:
             if pid in known_ids:
